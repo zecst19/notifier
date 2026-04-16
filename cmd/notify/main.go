@@ -22,12 +22,12 @@ func main() {
 	flag.Parse()
 
 	if *url == "" {
-		fmt.Println(os.Stderr, "error: --url is required")
+		fmt.Fprintln(os.Stderr, "error: --url is required")
 		flag.Usage()
 		os.Exit(1)
 	}
 
-	clint, err := notifier.New(notifier.Config{
+	client, err := notifier.New(notifier.Config{
 		URL:       *url,
 		Workers:   *workers,
 		QueueSize: *queueSize,
@@ -41,6 +41,8 @@ func main() {
 
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
+
+	lines := make(chan string)
 
 	go func() {
 		defer close(lines)
@@ -81,7 +83,7 @@ loop:
 				flush()
 				break loop
 			}
-			batch = append(batch, lines)
+			batch = append(batch, line)
 
 		case <-ticker.C:
 			flush()
